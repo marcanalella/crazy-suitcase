@@ -9,6 +9,7 @@ import { SuitcaseDisplay } from "@/components/suitcase-display"
 import { PrizePool } from "@/components/prize-pool"
 import { InventoryModal } from "@/components/inventory-modal"
 import { PrizeRevealModal } from "@/components/prize-reveal-modal"
+import { SpinningWheel } from "@/components/spinning-wheel"
 import { useWallet } from "@/hooks/use-wallet"
 import { useToast } from "@/hooks/use-toast"
 
@@ -18,6 +19,7 @@ export default function HomePage() {
   const { isConnected, isCorrectNetwork } = useWallet()
   const [isInventoryOpen, setIsInventoryOpen] = useState(false)
   const [isPrizeRevealOpen, setIsPrizeRevealOpen] = useState(false)
+  const [isWheelOpen, setIsWheelOpen] = useState(false) // Add spinning wheel state
   const [lastPrize, setLastPrize] = useState<any>(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const { toast } = useToast()
@@ -80,6 +82,35 @@ export default function HomePage() {
     }
   }
 
+  const handleSpinWheel = async () => {
+    if (!isConnected) {
+      toast({
+        title: "Wallet Required",
+        description: "Please connect your wallet first!",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (!isCorrectNetwork) {
+      toast({
+        title: "Wrong Network",
+        description: "Please switch to Base Sepolia testnet!",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setIsWheelOpen(true)
+  }
+
+  const handleWheelPrize = (prize: any) => {
+    if (prize && prize.type !== "Nothing") {
+      setLastPrize(prize)
+      // Don't show prize reveal modal immediately, let wheel show result first
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-secondary/20 via-background to-primary/10">
       {/* Header */}
@@ -107,6 +138,14 @@ export default function HomePage() {
               disabled={!isConnected || !isCorrectNetwork || isProcessing}
             >
               {isProcessing ? "Processing..." : "BUY SUITCASE - 0.01 ETH"}
+            </Button>
+
+            <Button
+              onClick={handleSpinWheel}
+              className="h-14 text-lg font-black bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-lg border-2 border-orange-400/30"
+              disabled={!isConnected || !isCorrectNetwork}
+            >
+              🎡 SPIN WHEEL - 0.01 ETH
             </Button>
 
             <Button
@@ -159,6 +198,8 @@ export default function HomePage() {
       <InventoryModal isOpen={isInventoryOpen} onClose={() => setIsInventoryOpen(false)} />
 
       <PrizeRevealModal isOpen={isPrizeRevealOpen} onClose={() => setIsPrizeRevealOpen(false)} prize={lastPrize} />
+
+      <SpinningWheel isOpen={isWheelOpen} onClose={() => setIsWheelOpen(false)} onPrizeWon={handleWheelPrize} />
     </div>
   )
 }
