@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Package, Gift } from "lucide-react"
@@ -12,8 +12,10 @@ import { PrizeRevealModal } from "@/components/prize-reveal-modal"
 import { SpinningWheel } from "@/components/spinning-wheel"
 import { useWallet } from "@/hooks/use-wallet"
 import { useToast } from "@/hooks/use-toast"
+import { sendTransaction } from "@/lib/web3"
+import { useMiniKit } from '@coinbase/onchainkit/minikit';
 
-const SUITCASE_CONTRACT_ADDRESS = "0x1234567890123456789012345678901234567890"
+const SUITCASE_CONTRACT_ADDRESS = "0x52b6c8F41AFC2E5CdCe9cBAD85E3CAace54a1329"
 
 export default function HomePage() {
   const { isConnected, isCorrectNetwork } = useWallet()
@@ -23,6 +25,13 @@ export default function HomePage() {
   const [lastPrize, setLastPrize] = useState<any>(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const { toast } = useToast()
+
+
+  const { setFrameReady, isFrameReady } = useMiniKit();
+
+  useEffect(() => {
+      if (!isFrameReady) setFrameReady();
+  }, [isFrameReady, setFrameReady]);
 
   const handleBuySuitcase = async () => {
     if (!isConnected) {
@@ -67,9 +76,9 @@ export default function HomePage() {
         description: "Check your prize!",
       })
 
-      // Uncomment this when contracts are deployed:
-      // const txHash = await sendTransaction(SUITCASE_CONTRACT_ADDRESS, "0.01")
-      // console.log("Transaction hash:", txHash)
+      const txHash = await sendTransaction(SUITCASE_CONTRACT_ADDRESS, "0.01")
+      console.log("Transaction hash:", txHash)
+
     } catch (error: any) {
       console.error("Purchase error:", error)
       toast({
