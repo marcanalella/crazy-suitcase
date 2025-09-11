@@ -14,6 +14,8 @@ import { useWallet } from "@/hooks/use-wallet"
 import { useToast } from "@/hooks/use-toast"
 import { sendTransaction } from "@/lib/web3"
 import { useMiniKit } from '@coinbase/onchainkit/minikit';
+import { sdk } from '@farcaster/miniapp-sdk'
+
 
 const SUITCASE_CONTRACT_ADDRESS = "0x52b6c8F41AFC2E5CdCe9cBAD85E3CAace54a1329"
 
@@ -42,6 +44,8 @@ export default function HomePage() {
       })
       return
     }
+
+    await sdk.actions.ready();
 
     if (!isCorrectNetwork) {
       toast({
