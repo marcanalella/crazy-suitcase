@@ -15,11 +15,7 @@ const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
 })
 
-export const metadata: Metadata = {
-  title: "Crazy Suitcase - Mystery Box App",
-  description: "Buy mystery suitcases and win crypto, NFTs, and tokens!",
-    generator: 'v0.app'
-}
+ 
 
 export default function RootLayout({
   children,
