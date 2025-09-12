@@ -10,7 +10,7 @@ export const wagmiConfig = createConfig({
     injected(),
     metaMask(),
     coinbaseWallet({
-      appName: "Crazy Suitcase",
+      appName: "CRAZY LOST AND FOUND SUITCASE",
     }),
   ],
   transports: {

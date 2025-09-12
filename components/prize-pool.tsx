@@ -52,13 +52,6 @@ export function PrizePool() {
             )
           })}
         </div>
-
-        <div className="mt-6 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-secondary/20 to-accent/20 rounded-full border border-secondary/30">
-            <Trophy className="h-4 w-4 text-secondary" />
-            <span className="text-sm font-bold">Total Prize Pool: 50+ ETH</span>
-          </div>
-        </div>
       </CardContent>
     </Card>
   )

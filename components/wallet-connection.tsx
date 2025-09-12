@@ -15,7 +15,7 @@ export function WalletConnection() {
       await connect()
       toast({
         title: "Wallet Connected! 🎉",
-        description: "Your crypto wallet is now connected to Crazy Suitcase.",
+        description: "Your crypto wallet is now connected to CRAZY LOST AND FOUND SUITCASE.",
       })
     } catch (error: any) {
       toast({

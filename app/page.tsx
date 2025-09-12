@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Package, Gift } from "lucide-react"
 import { WalletConnection } from "@/components/wallet-connection"
@@ -9,7 +8,6 @@ import { SuitcaseDisplay } from "@/components/suitcase-display"
 import { PrizePool } from "@/components/prize-pool"
 import { InventoryModal } from "@/components/inventory-modal"
 import { PrizeRevealModal } from "@/components/prize-reveal-modal"
-import { SpinningWheel } from "@/components/spinning-wheel"
 import { useWallet } from "@/hooks/use-wallet"
 import { useToast } from "@/hooks/use-toast"
 import { sendTransaction } from "@/lib/web3"
@@ -23,7 +21,6 @@ export default function HomePage() {
   const { isConnected, isCorrectNetwork } = useWallet()
   const [isInventoryOpen, setIsInventoryOpen] = useState(false)
   const [isPrizeRevealOpen, setIsPrizeRevealOpen] = useState(false)
-  const [isWheelOpen, setIsWheelOpen] = useState(false) // Add spinning wheel state
   const [lastPrize, setLastPrize] = useState<any>(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const { toast } = useToast()
@@ -95,28 +92,6 @@ export default function HomePage() {
     }
   }
 
-  const handleSpinWheel = async () => {
-    if (!isConnected) {
-      toast({
-        title: "Wallet Required",
-        description: "Please connect your wallet first!",
-        variant: "destructive",
-      })
-      return
-    }
-
-    if (!isCorrectNetwork) {
-      toast({
-        title: "Wrong Network",
-        description: "Please switch to Base Sepolia testnet!",
-        variant: "destructive",
-      })
-      return
-    }
-
-    setIsWheelOpen(true)
-  }
-
   const handleWheelPrize = (prize: any) => {
     if (prize && prize.type !== "Nothing") {
       setLastPrize(prize)
@@ -131,7 +106,7 @@ export default function HomePage() {
         <div className="container flex h-16 items-center justify-between px-4">
           <div className="flex items-center gap-2">
             <Package className="h-6 w-6 text-primary" />
-            <h1 className="text-xl font-black text-primary">CRAZY SUITCASE</h1>
+            <h1 className="text-xl font-black text-primary">CRAZY LOST AND FOUND SUITCASE</h1>
           </div>
           <WalletConnection />
         </div>
@@ -154,14 +129,6 @@ export default function HomePage() {
             </Button>
 
             <Button
-              onClick={handleSpinWheel}
-              className="h-14 text-lg font-black bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-lg border-2 border-orange-400/30"
-              disabled={!isConnected || !isCorrectNetwork}
-            >
-              🎡 SPIN WHEEL - 0.01 ETH
-            </Button>
-
-            <Button
               onClick={() => setIsInventoryOpen(true)}
               variant="outline"
               className="h-12 text-base font-bold border-primary text-primary hover:bg-primary hover:text-primary-foreground"
@@ -174,37 +141,6 @@ export default function HomePage() {
 
         {/* Prize Pool */}
         <PrizePool />
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-black text-primary">1,247</div>
-              <div className="text-sm text-muted-foreground">Suitcases Sold</div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-secondary/10 to-secondary/5 border-secondary/20">
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-black text-secondary">89</div>
-              <div className="text-sm text-muted-foreground">NFTs Won</div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-accent/10 to-accent/5 border-accent/20">
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-black text-accent">12.5</div>
-              <div className="text-sm text-muted-foreground">ETH Distributed</div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-primary/10 to-secondary/10 border-primary/20">
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-black text-primary">156</div>
-              <div className="text-sm text-muted-foreground">Active Players</div>
-            </CardContent>
-          </Card>
-        </div>
       </main>
 
       {/* Modals */}
@@ -212,7 +148,6 @@ export default function HomePage() {
 
       <PrizeRevealModal isOpen={isPrizeRevealOpen} onClose={() => setIsPrizeRevealOpen(false)} prize={lastPrize} />
 
-      <SpinningWheel isOpen={isWheelOpen} onClose={() => setIsWheelOpen(false)} onPrizeWon={handleWheelPrize} />
     </div>
   )
 }

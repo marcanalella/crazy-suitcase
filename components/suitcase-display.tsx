@@ -12,7 +12,7 @@ export function SuitcaseDisplay() {
 
   return (
     <div className="flex flex-col items-center space-y-4">
-      <h1 className="text-4xl md:text-6xl font-black text-foreground tracking-tight">CRAZY SUITCASE</h1>
+      <h1 className="text-4xl md:text-6xl font-black text-foreground tracking-tight">CRAZY LOST AND FOUND SUITCASE</h1>
 
       <div
         className={`cursor-pointer transition-transform duration-300 hover:scale-105 ${
