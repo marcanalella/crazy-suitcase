@@ -55,30 +55,14 @@ export default function HomePage() {
 
     setIsProcessing(true)
     try {
-      toast({
-        title: "Transaction Submitted! 🚀",
-        description: "Your suitcase purchase is being processed...",
+      const priceEth = "0.00000001" // TODO: read from contract if needed
+      writeContract({
+        address: SUITCASE_CONTRACT_ADDRESS as `0x${string}`,
+        abi: CRAZY_SUITCASE_ABI,
+        functionName: "buySuitcase",
+        value: parseEther(priceEth),
       })
-
-      await new Promise((resolve) => setTimeout(resolve, 2000))
-
-      const prizes = [
-        { type: "Crypto", name: "USDC", amount: "50", value: "$50", rarity: "Common" },
-        { type: "NFT", name: "Ticket NFT", value: "0.02 ETH", rarity: "Uncommon" },
-        { type: "NFT", name: "Banana NFT", value: "0.05 ETH", rarity: "Rare" },
-      ]
-
-      const randomPrize = prizes[Math.floor(Math.random() * prizes.length)]
-      setLastPrize(randomPrize)
-      setIsPrizeRevealOpen(true)
-
-      toast({
-        title: "Suitcase Purchased! 🎉",
-        description: "Check your prize!",
-      })
-
-      const txHash = await sendTransaction(SUITCASE_CONTRACT_ADDRESS, "0.01")
-      console.log("Transaction hash:", txHash)
+      toast({ title: "Transaction Submitted! 🚀", description: "Waiting for confirmation..." })
 
     } catch (error: any) {
       console.error("Purchase error:", error)
