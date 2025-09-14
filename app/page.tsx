@@ -2,15 +2,16 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Package, Gift } from "lucide-react"
+import { Package } from "lucide-react"
 import { WalletConnection } from "@/components/wallet-connection"
 import { SuitcaseDisplay } from "@/components/suitcase-display"
 import { PrizePool } from "@/components/prize-pool"
-import { InventoryModal } from "@/components/inventory-modal"
 import { PrizeRevealModal } from "@/components/prize-reveal-modal"
 import { useWallet } from "@/hooks/use-wallet"
 import { useToast } from "@/hooks/use-toast"
-import { sendTransaction } from "@/lib/web3"
+import { CRAZY_SUITCASE_ABI } from "@/lib/contracts"
+import { useWriteContract, useWaitForTransactionReceipt } from "wagmi"
+import { parseEther, decodeEventLog } from "viem"
 import { useMiniKit } from '@coinbase/onchainkit/minikit';
 import { sdk } from '@farcaster/miniapp-sdk'
 
@@ -31,6 +32,37 @@ export default function HomePage() {
   useEffect(() => {
       if (!isFrameReady) setFrameReady();
   }, [isFrameReady, setFrameReady]);
+
+  const { writeContract, data: txHash, isPending: isSubmitting } = useWriteContract()
+  const { data: receipt, isLoading: isConfirming } = useWaitForTransactionReceipt({
+    hash: txHash,
+  })
+
+  useEffect(() => {
+    if (!receipt) return
+    try {
+      // Try to decode PrizeDistributed event for prize details
+      const prizeLogs = receipt.logs
+        .map((log) => {
+          try {
+            return decodeEventLog({ abi: CRAZY_SUITCASE_ABI as any, ...log })
+          } catch {
+            return null
+          }
+        })
+        .filter(Boolean) as any[]
+
+      const prizeEvent = prizeLogs.find((e) => e.eventName === "PrizeDistributed")
+      if (prizeEvent) {
+        const [, prizeType, amount] = prizeEvent.args as any
+        setLastPrize({ type: "On-chain Prize", name: String(prizeType), amount: String(amount) })
+        setIsPrizeRevealOpen(true)
+      }
+      setIsProcessing(false)
+    } catch (e) {
+      setIsProcessing(false)
+    }
+  }, [receipt])
 
   const handleBuySuitcase = async () => {
     if (!isConnected) {
@@ -55,7 +87,7 @@ export default function HomePage() {
 
     setIsProcessing(true)
     try {
-      const priceEth = "0.00000001" // TODO: read from contract if needed
+      const priceEth = "0.00001"
       writeContract({
         address: SUITCASE_CONTRACT_ADDRESS as `0x${string}`,
         abi: CRAZY_SUITCASE_ABI,
@@ -72,7 +104,7 @@ export default function HomePage() {
         variant: "destructive",
       })
     } finally {
-      setIsProcessing(false)
+      // actual completion handled by receipt effect
     }
   }
 
@@ -111,15 +143,6 @@ export default function HomePage() {
             >
               {isProcessing ? "Processing..." : "BUY SUITCASE - 0.01 ETH"}
             </Button>
-
-            <Button
-              onClick={() => setIsInventoryOpen(true)}
-              variant="outline"
-              className="h-12 text-base font-bold border-primary text-primary hover:bg-primary hover:text-primary-foreground"
-            >
-              <Gift className="mr-2 h-5 w-5" />
-              MIEI BAGAGLI
-            </Button>
           </div>
         </div>
 
@@ -127,8 +150,22 @@ export default function HomePage() {
         <PrizePool />
       </main>
 
-      {/* Modals */}
-      <InventoryModal isOpen={isInventoryOpen} onClose={() => setIsInventoryOpen(false)} />
+      {/* Footer */}
+      <footer className="mt-16 py-8 border-t border-border/50">
+        <div className="container mx-auto px-4 text-center space-y-4">
+        <p className="text-sm text-muted-foreground">
+            Developed in occasion of: <span className="font-semibold text-primary">[Urbe Campus ETHNA Edition]</span>
+          </p>
+
+          <div className="flex justify-center">
+            <img 
+              src="/placeholder-logo.avif" 
+              alt="Event Logo" 
+              className="w-auto object-contain"
+            />
+          </div>
+        </div>
+      </footer>
 
       <PrizeRevealModal isOpen={isPrizeRevealOpen} onClose={() => setIsPrizeRevealOpen(false)} prize={lastPrize} />
 

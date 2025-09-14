@@ -1,28 +1,28 @@
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Coins, Gem, Trophy } from "lucide-react"
+import { Banana, DollarSign, Plane } from "lucide-react"
 
 export function PrizePool() {
   const prizes = [
     {
-      icon: Gem,
-      name: "Ethereum",
-      amount: "0.01 - 1 ETH",
+      icon: DollarSign,
+      name: "Mock USDC",
+      amount: "5$",
       color: "text-blue-500",
       bgColor: "bg-blue-500/10",
     },
     {
-      icon: Trophy,
-      name: "Rare NFTs",
-      amount: "Epic Collections",
+      icon: Plane,
+      name: "Ticket NFT",
+      amount: "Time to travel!",
       color: "text-purple-500",
       bgColor: "bg-purple-500/10",
     },
     {
-      icon: Coins,
-      name: "Mystery Tokens",
-      amount: "100 - 10,000 MST",
+      icon: Banana,
+      name: "Banana NFT",
+      amount: "It's a Banana!",
       color: "text-green-500",
       bgColor: "bg-green-500/10",
     },
@@ -31,7 +31,7 @@ export function PrizePool() {
   return (
     <Card className="border-primary/20">
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl font-black text-foreground">MONTEPREMI</CardTitle>
+        <CardTitle className="text-2xl font-black text-foreground">Jackpot</CardTitle>
         <p className="text-muted-foreground">Discover what amazing prizes await in your suitcase!</p>
       </CardHeader>
       <CardContent>

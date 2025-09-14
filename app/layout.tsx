@@ -3,7 +3,7 @@ import type { Metadata } from "next"
 import { Inter, JetBrains_Mono } from "next/font/google"
 import "./globals.css"
 import { Toaster } from "@/components/ui/toaster"
-import { MiniKitContextProvider } from "@/providers/MiniKitProvider"
+import { Providers } from "./providers"
 
 const inter = Inter({
   variable: "--font-inter",
@@ -25,8 +25,10 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} ${jetbrainsMono.variable} antialiased`}>
-        <MiniKitContextProvider>{children}</MiniKitContextProvider>
+        <Providers>
+          {children}
           <Toaster />
+        </Providers>
       </body>
     </html>
   )
