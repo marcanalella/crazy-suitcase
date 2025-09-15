@@ -9,18 +9,14 @@ import { PrizePool } from "@/components/prize-pool"
 import { PrizeRevealModal } from "@/components/prize-reveal-modal"
 import { useWallet } from "@/hooks/use-wallet"
 import { useToast } from "@/hooks/use-toast"
-import { CRAZY_SUITCASE_ABI } from "@/lib/contracts"
-import { useWriteContract, useWaitForTransactionReceipt } from "wagmi"
+import { CRAZY_SUITCASE_ABI, CONTRACT_ADDRESSES } from "@/lib/contracts"
+import { useWriteContract, useWaitForTransactionReceipt, useReadContract } from "wagmi"
 import { parseEther, decodeEventLog } from "viem"
 import { useMiniKit } from '@coinbase/onchainkit/minikit';
 import { sdk } from '@farcaster/miniapp-sdk'
 
-
-const SUITCASE_CONTRACT_ADDRESS = "0x52b6c8F41AFC2E5CdCe9cBAD85E3CAace54a1329"
-
 export default function HomePage() {
   const { isConnected, isCorrectNetwork } = useWallet()
-  const [isInventoryOpen, setIsInventoryOpen] = useState(false)
   const [isPrizeRevealOpen, setIsPrizeRevealOpen] = useState(false)
   const [lastPrize, setLastPrize] = useState<any>(null)
   const [isProcessing, setIsProcessing] = useState(false)
@@ -33,6 +29,13 @@ export default function HomePage() {
       if (!isFrameReady) setFrameReady();
   }, [isFrameReady, setFrameReady]);
 
+  // Check if contract exists by reading SUITCASE_PRICE
+  const { error: contractError } = useReadContract({
+    address: CONTRACT_ADDRESSES.CRAZY_SUITCASE as `0x${string}`,
+    abi: CRAZY_SUITCASE_ABI,
+    functionName: "SUITCASE_PRICE",
+  })
+
   const { writeContract, data: txHash, isPending: isSubmitting } = useWriteContract()
   const { data: receipt, isLoading: isConfirming } = useWaitForTransactionReceipt({
     hash: txHash,
@@ -41,8 +44,12 @@ export default function HomePage() {
   useEffect(() => {
     if (!receipt) return
     try {
-      // Try to decode PrizeDistributed event for prize details
-      const prizeLogs = receipt.logs
+      // Filter logs to our contract address first
+      const contractAddress = (CONTRACT_ADDRESSES.CRAZY_SUITCASE as string).toLowerCase()
+      const relatedLogs = receipt.logs.filter((log: any) => (log.address as string)?.toLowerCase() === contractAddress)
+
+      // Try to decode logs using our ABI
+      const decoded = relatedLogs
         .map((log) => {
           try {
             return decodeEventLog({ abi: CRAZY_SUITCASE_ABI as any, ...log })
@@ -52,10 +59,21 @@ export default function HomePage() {
         })
         .filter(Boolean) as any[]
 
-      const prizeEvent = prizeLogs.find((e) => e.eventName === "PrizeDistributed")
-      if (prizeEvent) {
-        const [, prizeType, amount] = prizeEvent.args as any
+      // Prefer PrizeDistributed, but fall back to SuitcasePurchased
+      const prizeDistributed = decoded.find((e) => e.eventName === "PrizeDistributed")
+      const suitcasePurchased = decoded.find((e) => e.eventName === "SuitcasePurchased")
+
+      if (prizeDistributed) {
+        const [, prizeType, amount] = prizeDistributed.args as any
         setLastPrize({ type: "On-chain Prize", name: String(prizeType), amount: String(amount) })
+        setIsPrizeRevealOpen(true)
+      } else if (suitcasePurchased) {
+        const [, prizeType, amount] = suitcasePurchased.args as any
+        setLastPrize({ type: "Purchase", name: `Prize #${String(prizeType)}`, amount: String(amount) })
+        setIsPrizeRevealOpen(true)
+      } else {
+        // If no known event was found but tx confirmed, still show a generic success
+        setLastPrize({ type: "Purchase", name: "Suitcase Purchased", amount: "" })
         setIsPrizeRevealOpen(true)
       }
       setIsProcessing(false)
@@ -85,11 +103,20 @@ export default function HomePage() {
       return
     }
 
+    if (contractError) {
+      toast({
+        title: "Contract Not Found",
+        description: "The contract is not deployed on this network. Please deploy contracts first.",
+        variant: "destructive",
+      })
+      return
+    }
+
     setIsProcessing(true)
     try {
-      const priceEth = "0.00001"
+      const priceEth = "0.00022"
       writeContract({
-        address: SUITCASE_CONTRACT_ADDRESS as `0x${string}`,
+        address: CONTRACT_ADDRESSES.CRAZY_SUITCASE as `0x${string}`,
         abi: CRAZY_SUITCASE_ABI,
         functionName: "buySuitcase",
         value: parseEther(priceEth),
@@ -98,13 +125,25 @@ export default function HomePage() {
 
     } catch (error: any) {
       console.error("Purchase error:", error)
+      setIsProcessing(false)
+      
+      let errorMessage = "There was an error processing your purchase."
+      
+      if (error?.message?.includes("Internal JSON-RPC error")) {
+        errorMessage = "Contract not found or network issue. Please check you're on Base Sepolia."
+      } else if (error?.message?.includes("insufficient funds")) {
+        errorMessage = "Insufficient ETH balance for transaction."
+      } else if (error?.message?.includes("user rejected")) {
+        errorMessage = "Transaction was cancelled by user."
+      } else if (error?.message) {
+        errorMessage = error.message
+      }
+      
       toast({
         title: "Purchase Failed",
-        description: error?.message || "There was an error processing your purchase.",
+        description: errorMessage,
         variant: "destructive",
       })
-    } finally {
-      // actual completion handled by receipt effect
     }
   }
 
@@ -139,9 +178,11 @@ export default function HomePage() {
             <Button
               onClick={handleBuySuitcase}
               className="h-14 text-lg font-black bg-primary hover:bg-primary/90 text-white shadow-lg border-2 border-primary/30"
-              disabled={!isConnected || !isCorrectNetwork || isProcessing}
+              disabled={!isConnected || !isCorrectNetwork || isProcessing || !!contractError}
             >
-              {isProcessing ? "Processing..." : "BUY SUITCASE - 0.01 ETH"}
+              {isProcessing ? "Processing..." : 
+               contractError ? "Contract Not Deployed" :
+               "BUY SUITCASE"}
             </Button>
           </div>
         </div>

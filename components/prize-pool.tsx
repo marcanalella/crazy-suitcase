@@ -8,7 +8,7 @@ export function PrizePool() {
     {
       icon: DollarSign,
       name: "Mock USDC",
-      amount: "5$",
+      amount: "10$",
       color: "text-blue-500",
       bgColor: "bg-blue-500/10",
     },
