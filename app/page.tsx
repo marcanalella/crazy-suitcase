@@ -11,7 +11,7 @@ import { useWallet } from "@/hooks/use-wallet"
 import { useToast } from "@/hooks/use-toast"
 import { CRAZY_SUITCASE_ABI, CONTRACT_ADDRESSES } from "@/lib/contracts"
 import { useWriteContract, useWaitForTransactionReceipt, useReadContract } from "wagmi"
-import { parseEther, decodeEventLog } from "viem"
+import { decodeEventLog } from "viem"
 import { useMiniKit } from '@coinbase/onchainkit/minikit';
 import { sdk } from '@farcaster/miniapp-sdk'
 
@@ -30,7 +30,7 @@ export default function HomePage() {
   }, [isFrameReady, setFrameReady]);
 
   // Check if contract exists by reading SUITCASE_PRICE
-  const { error: contractError } = useReadContract({
+  const { error: contractError, data: suitcasePrice } = useReadContract({
     address: CONTRACT_ADDRESSES.CRAZY_SUITCASE as `0x${string}`,
     abi: CRAZY_SUITCASE_ABI,
     functionName: "SUITCASE_PRICE",
@@ -44,9 +44,11 @@ export default function HomePage() {
   useEffect(() => {
     if (!receipt) return
     try {
+      console.log("[buySuitcase] receipt:", receipt)
       // Filter logs to our contract address first
       const contractAddress = (CONTRACT_ADDRESSES.CRAZY_SUITCASE as string).toLowerCase()
       const relatedLogs = receipt.logs.filter((log: any) => (log.address as string)?.toLowerCase() === contractAddress)
+      console.log("[buySuitcase] relatedLogs:", relatedLogs)
 
       // Try to decode logs using our ABI
       const decoded = relatedLogs
@@ -58,26 +60,49 @@ export default function HomePage() {
           }
         })
         .filter(Boolean) as any[]
+      console.log("[buySuitcase] decoded:", decoded)
 
       // Prefer PrizeDistributed, but fall back to SuitcasePurchased
       const prizeDistributed = decoded.find((e) => e.eventName === "PrizeDistributed")
       const suitcasePurchased = decoded.find((e) => e.eventName === "SuitcasePurchased")
 
       if (prizeDistributed) {
-        const [, prizeType, amount] = prizeDistributed.args as any
-        setLastPrize({ type: "On-chain Prize", name: String(prizeType), amount: String(amount) })
+        const { prizeType, amount } = prizeDistributed.args as any
+        const prizeTypeStr = String(prizeType)
+        if (prizeTypeStr === "Mock USDC") {
+          const formatted = (Number(amount) / 1_000_000).toString()
+          setLastPrize({ type: "On-chain Prize", name: "Mock USDC", value: "USDC", amount: formatted })
+        } else if (prizeTypeStr === "TicketNFT") {
+          setLastPrize({ type: "On-chain Prize", name: "Ticket NFT", value: "NFT", amount: "1" })
+        } else if (prizeTypeStr === "BananaNFT") {
+          setLastPrize({ type: "On-chain Prize", name: "Banana NFT", value: "NFT", amount: "1" })
+        } else {
+          setLastPrize({ type: "On-chain Prize", name: prizeTypeStr, value: "", amount: String(amount) })
+        }
         setIsPrizeRevealOpen(true)
       } else if (suitcasePurchased) {
-        const [, prizeType, amount] = suitcasePurchased.args as any
-        setLastPrize({ type: "Purchase", name: `Prize #${String(prizeType)}`, amount: String(amount) })
+        const { prizeType, amount } = suitcasePurchased.args as any
+        const prizeTypeNum = Number(prizeType)
+        if (prizeTypeNum === 0) {
+          const formatted = (Number(amount) / 1_000_000).toString()
+          setLastPrize({ type: "Purchase", name: "Mock USDC", value: "USDC", amount: formatted })
+        } else if (prizeTypeNum === 1) {
+          setLastPrize({ type: "Purchase", name: "Ticket NFT", value: "NFT", amount: "1" })
+        } else if (prizeTypeNum === 2) {
+          setLastPrize({ type: "Purchase", name: "Banana NFT", value: "NFT", amount: "1" })
+        } else {
+          setLastPrize({ type: "Purchase", name: `Prize #${String(prizeType)}`, value: "", amount: String(amount) })
+        }
         setIsPrizeRevealOpen(true)
       } else {
         // If no known event was found but tx confirmed, still show a generic success
         setLastPrize({ type: "Purchase", name: "Suitcase Purchased", amount: "" })
         setIsPrizeRevealOpen(true)
+        toast({ title: "Purchase Confirmed", description: "No prize event found in receipt logs." })
       }
       setIsProcessing(false)
     } catch (e) {
+      console.error("[buySuitcase] error decoding events:", e)
       setIsProcessing(false)
     }
   }, [receipt])
@@ -114,12 +139,11 @@ export default function HomePage() {
 
     setIsProcessing(true)
     try {
-      const priceEth = "0.00022"
       writeContract({
         address: CONTRACT_ADDRESSES.CRAZY_SUITCASE as `0x${string}`,
         abi: CRAZY_SUITCASE_ABI,
         functionName: "buySuitcase",
-        value: parseEther(priceEth),
+        value: (suitcasePrice as bigint) ?? undefined,
       })
       toast({ title: "Transaction Submitted! 🚀", description: "Waiting for confirmation..." })
 
@@ -147,12 +171,6 @@ export default function HomePage() {
     }
   }
 
-  const handleWheelPrize = (prize: any) => {
-    if (prize && prize.type !== "Nothing") {
-      setLastPrize(prize)
-      // Don't show prize reveal modal immediately, let wheel show result first
-    }
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-secondary/20 via-background to-primary/10">
