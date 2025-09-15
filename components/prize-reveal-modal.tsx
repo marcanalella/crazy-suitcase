@@ -56,7 +56,7 @@ export function PrizeRevealModal({ isOpen, onClose, prize }: PrizeRevealModalPro
         <div className="text-center space-y-6 p-6">
           {/* Header */}
           <div className="space-y-2">
-            <h1 className="text-4xl font-black text-foreground">HAI VINTO!</h1>
+            <h1 className="text-4xl font-black text-foreground">YOU WON!</h1>
             <p className="text-muted-foreground">Congratulations on your prize!</p>
           </div>
 
@@ -86,7 +86,7 @@ export function PrizeRevealModal({ isOpen, onClose, prize }: PrizeRevealModalPro
               <CardContent className="p-6 space-y-4">
                 <div className="flex items-center justify-center gap-2">
                   <Trophy className="h-6 w-6 text-secondary" />
-                  <span className="text-lg font-black">PREMIO</span>
+                  <span className="text-lg font-black">PRIZE</span>
                 </div>
 
                 <div className="space-y-2">
